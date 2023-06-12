@@ -22,12 +22,19 @@ grep -v -E 'issuer|subject' "$collectionFile" | split -p "-----BEGIN CERTIFICATE
 for i in `ls "$tmp"/certificate-*`; do
   certnumber=$((certnumber+1))
   loopuuid=$(uuidgen)
+  subject=$(openssl x509 -subject -issuer -noout -in $i | grep subject | cut -d '=' -f2-)
+  issuer=$(openssl x509 -subject -issuer -noout -in $i | grep issuer | cut -d '=' -f2-)
+  if [[ $subject == $issuer ]];then
+    payloadtype="com.apple.security.root"
+  else
+    payloadtype="com.apple.security.pkcs1"
+  fi
   certdata+="
                   <dict>
                         <key>PayloadUUID</key>
                         <string>$loopuuid</string>
                         <key>PayloadType</key>
-                        <string>com.apple.security.root</string>
+                        <string>$payloadtype</string>
                         <key>PayloadOrganization</key>
                         <string>Mann Consulting</string>
                         <key>PayloadIdentifier</key>
@@ -35,19 +42,19 @@ for i in `ls "$tmp"/certificate-*`; do
                         <key>PayloadDisplayName</key>
                         <string>$certname-$certnumber</string>
                         <key>PayloadDescription</key>
-                        <string />
+                        <string/>
                         <key>PayloadVersion</key>
                         <integer>1</integer>
                         <key>PayloadEnabled</key>
-                        <true />
+                        <true/>
                         <key>PayloadCertificateFileName</key>
                         <string>$certname-$certnumber.cer</string>
                         <key>PayloadContent</key>
                         <data>$(grep -v 'CERTIFICATE' $i | tr -d '\n')</data>
                         <key>AllowAllAppsAccess</key>
-                        <true />
+                        <true/>
                         <key>KeyIsExtractable</key>
-                        <true />
+                        <true/>
                   </dict>"
 done
 
@@ -72,9 +79,9 @@ profile="<?xml version=\"1.0\" encoding=\"UTF-8\"?>
             <key>PayloadVersion</key>
             <integer>1</integer>
             <key>PayloadEnabled</key>
-            <true />
+            <true/>
             <key>PayloadRemovalDisallowed</key>
-            <true />
+            <true/>
             <key>PayloadScope</key>
             <string>System</string>
             <key>PayloadContent</key>
